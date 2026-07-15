@@ -1,0 +1,37 @@
+{
+  "manifestVersion": 1,
+  "id": "stargate",
+  "version": "1.0.0",
+  "name": "Stargate",
+  "description": "AI agent marketplace and compute platform",
+  "author": "HyperCycle",
+  "homepage": "https://github.com/hypercycle-development/mosaic-addons",
+  "minAppVersion": "0.1.7",
+
+  "ipcNamespace": "stargate",
+  "mountPoint": "tab",
+
+  "tab": {
+    "label": "Stargate",
+    "icon": "Layers",
+    "order": 100
+  },
+
+  "renderer": {
+    "entry": "renderer/index.html"
+  },
+
+  "permissions": [
+    "wallet:read",
+    "agents:read",
+    "agents:write",
+    "mcp:read",
+    "mcp:call",
+    "nodes:read",
+    "shell:open-external"
+  ],
+
+  "updates": {
+    "checkMode": "manual"
+  }
+}
