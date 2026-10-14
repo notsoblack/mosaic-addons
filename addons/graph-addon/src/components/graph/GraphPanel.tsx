@@ -100,6 +100,7 @@ const RING_LABELS = ['Portal', 'Vault', 'MCPs', 'Agents', 'ANFEs'];
 
 const GraphPanel: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const panRef = useRef<HTMLDivElement>(null);
   const [api, setApi] = useState<AddonAPI | null>(null);
   const [bridgeMissing, setBridgeMissing] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>(DEMO_NODES);
@@ -390,11 +391,25 @@ const GraphPanel: React.FC = () => {
   }, [nodes, searchQuery]);
 
   // Pan / zoom handlers
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(z => Math.max(0.3, Math.min(3, z * delta)));
-  };
+  /**
+   * Zoom must stop the page from scrolling, which needs a NON-passive wheel
+   * listener. React attaches onWheel at the root as passive, so calling
+   * e.preventDefault() there is ignored and the browser logs
+   * "Unable to preventDefault inside passive event listener invocation" on
+   * every scroll. A native listener with `{passive: false}` is the supported
+   * way to opt back out, scoped to this one element and removed on unmount.
+   */
+  useEffect(() => {
+    const el = panRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(z => Math.max(0.3, Math.min(3, z * delta)));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
@@ -604,7 +619,7 @@ const GraphPanel: React.FC = () => {
           <FactoryHierarchyTree />
         </div>
       ) : (
-        <div className="flex-1 relative overflow-hidden" onWheel={handleWheel}>
+        <div ref={panRef} className="flex-1 relative overflow-hidden">
         <svg ref={svgRef} className="w-full h-full cursor-grab active:cursor-grabbing"
           viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice"
         >
