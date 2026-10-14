@@ -52,6 +52,37 @@ interface EdgeData {
   color: string;
 }
 
+/**
+ * Whether the user has asked for reduced motion.
+ *
+ * Read once from matchMedia and kept in state, so a change made while the
+ * panel is open is picked up. Every animation in the constellation is gated on
+ * this: SMIL animations and CSS transitions both honour prefers-reduced-motion
+ * when disabled, and the graph then renders its structure without motion —
+ * still readable, just still.
+ */
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
+    // addEventListener is the modern API; older WebKit only has addListener.
+    if (mq.addEventListener) {
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    }
+    mq.addListener(onChange);
+    return () => mq.removeListener(onChange);
+  }, []);
+
+  return reduced;
+}
+
 // ── Demo Data ──────────────────────────────────────────────────────────────
 
 const DEMO_NODES: NodeData[] = [
@@ -106,6 +137,7 @@ const GraphPanel: React.FC = () => {
   const [edges, setEdges] = useState<EdgeData[]>(DEMO_EDGES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [zoom, setZoom] = useState(1);
@@ -685,6 +717,30 @@ const GraphPanel: React.FC = () => {
                     transition: 'all 0.3s ease',
                   }}
                 />
+                {/* Glow underlay. A wide, faint copy of the same path makes the
+                    edge read against a light background, where a 1px stroke at
+                    0.5 opacity otherwise disappears. */}
+                {!selectedNode && !isConnected && (
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={edge.color}
+                    strokeWidth={5}
+                    opacity={0.14}
+                    strokeLinecap="round"
+                    pointerEvents="none"
+                  />
+                )}
+                {/* Traveling dot — shows direction and that the edge is live. */}
+                {!reducedMotion && !selectedNode && (
+                  <circle r={2.5} fill="#ffffff" opacity={0.9} pointerEvents="none">
+                    <animateMotion
+                      dur={`${2.4 + (i % 4) * 0.4}s`}
+                      repeatCount="indefinite"
+                      path={path}
+                    />
+                  </circle>
+                )}
                 {/* Arrowhead for direction */}
                 {isConnected && (
                   <polygon
@@ -738,13 +794,27 @@ const GraphPanel: React.FC = () => {
                   </>
                 ) : (
                   <>
+                    {/* Contrast halo. A soft disc behind the node so it stays
+                        legible on a light background, where a 1px stroke at
+                        0.9 opacity on a 18-alpha fill can wash out. Static:
+                        no pulsing, because nothing here is running. */}
+                    {!isDimmed && (
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r={(node.size * zoom) / 2 + 5}
+                        fill={node.color}
+                        opacity={0.16}
+                        pointerEvents="none"
+                      />
+                    )}
                     <circle
                       cx={pos.x}
                       cy={pos.y}
                       r={(node.size * zoom) / 2}
                       fill={`${node.color}18`}
                       stroke={isSelected ? '#fff' : node.color}
-                      strokeWidth={isSelected ? 2 : 1}
+                      strokeWidth={isSelected ? 2 : 1.5}
                       opacity={isDimmed ? 0.15 : 0.9}
                       style={{ transition: 'opacity 0.3s ease' }}
                     />
@@ -800,6 +870,42 @@ const GraphPanel: React.FC = () => {
                 50% { box-shadow: 0 0 30px rgba(147, 51, 234, 0.7), 0 0 60px rgba(147, 51, 234, 0.5); }
               }
             `}</style>
+
+            {/* Empty state, stated in the canvas. The toolbar badge already
+                distinguishes live / live-but-empty / failed / demo; this puts
+                the same truth where the blank space is, so an empty
+                constellation reads as "nothing configured" rather than as a
+                rendering failure. Deliberately draws no node and no edge. */}
+            {nodes.length <= 1 && (
+              <text
+                x={500}
+                y={340}
+                textAnchor="middle"
+                fill="#64748b"
+                fontSize={13}
+                fontFamily="ui-sans-serif, system-ui"
+                pointerEvents="none"
+              >
+                {liveState === 'failed'
+                  ? 'Could not read from the Mosaic bridge.'
+                  : liveState === 'empty'
+                    ? 'No MCP servers or agents configured yet.'
+                    : 'Nothing to show yet.'}
+              </text>
+            )}
+            {liveState === 'empty' && nodes.length <= 1 && (
+              <text
+                x={500}
+                y={362}
+                textAnchor="middle"
+                fill="#475569"
+                fontSize={11}
+                fontFamily="ui-sans-serif, system-ui"
+                pointerEvents="none"
+              >
+                Add an MCP server or an agent, then Refresh Nodes.
+              </text>
+            )}
 
             {/* Ring Color Legend (bottom-left) */}
             <div className="absolute bottom-3 left-3 bg-gray-900/80 border border-gray-700 rounded-lg p-2 backdrop-blur pointer-events-none">
