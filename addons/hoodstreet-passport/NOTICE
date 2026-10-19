@@ -1,0 +1,32 @@
+HoodStreet Passport (hoodstreet-passport)
+Copyright 2026 notsoblack
+
+This product includes software developed at
+notsoblack (https://github.com/notsoblack).
+
+================================================================================
+Third-party brand notice
+================================================================================
+
+HoodStreet, CCFF00, My Neon, and related names, logos, and visual branding
+are the trademarks and brand assets of HoodStreet (https://hoodstreet.capital)
+and are NOT licensed under the Apache License, Version 2.0. The Apache-2.0
+license grants no trademark rights beyond reasonable attribution. Any use of
+HoodStreet brand assets in this addon is for interoperability with the
+publicly documented HoodStreet MCP at https://agent.hoodstreet.capital/mcp.
+
+This addon is a community tool. It is not an official HoodStreet product,
+not endorsed by HoodStreet, and not affiliated with Robinhood Markets, Inc.
+
+================================================================================
+Upstream
+================================================================================
+
+HoodStreet Agent MCP server (erc-6551-agent)
+Copyright 2026 hempmillionaire
+Licensed under the Apache License, Version 2.0
+https://github.com/hempmillionaire/erc-6551-agent
+
+This addon calls the official HoodStreet MCP endpoint over HTTP and never
+stores or processes HoodStreet credentials. All financial actions require
+external signing by the user's own wallet.

@@ -1,0 +1,29 @@
+{
+  "manifestVersion": 1,
+  "id": "hoodstreet-passport",
+  "version": "0.3.0",
+  "name": "HoodStreet Passport",
+  "description": "Read-only HoodStreet / CCFF00 member passport: TBA, balances, activity, mint lock, curated-mint discovery. Calls the official HoodStreet MCP; never holds keys.",
+  "author": "@notsoblack",
+  "homepage": "https://github.com/notsoblack/hoodstreet-passport",
+  "ipcNamespace": "hoodstreet-passport",
+  "mountPoint": "tab",
+  "tab": {
+    "label": "HoodStreet",
+    "icon": "Wallet",
+    "order": 65,
+    "deepLink": { "param": "tokenId" }
+  },
+  "renderer": {
+    "entry": "renderer/index.html"
+  },
+  "permissions": [
+    "mcp:read",
+    "mcp:call",
+    "shell:open-external"
+  ],
+  "linkVisibilityToActivation": true,
+  "updates": {
+    "checkMode": "manual"
+  }
+}
