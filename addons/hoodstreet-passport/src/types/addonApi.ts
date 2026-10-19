@@ -22,6 +22,17 @@ export interface McpToolInfo {
   name: string;
   description?: string;
   inputSchema?: unknown;
+  /**
+   * Optional add-on categorization. The live MCP only returns
+   * {name, description, inputSchema}; we extend locally so the Tools view
+   * can render status badges and group the catalog by access pattern.
+   */
+  category?: 'read' | 'prepare' | 'execute';
+  /**
+   * Optional add-on argument shape. Same caveat as category: a UI helper
+   * for the Tools view, not part of the live MCP wire format.
+   */
+  args?: Record<string, string>;
 }
 
 export interface McpServerInfo {

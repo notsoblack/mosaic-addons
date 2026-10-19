@@ -1,6 +1,6 @@
 {
   "name": "hoodstreet-passport",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "HoodStreet / CCFF00 member passport addon for MosAIc Companion — read-only audit (Create/Mint/Transfer shipped as v0.2.x source; see CHANGELOG.md)",
   "private": true,
   "type": "module",

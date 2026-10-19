@@ -21,6 +21,7 @@ import { PassportView } from './components/PassportView';
 import { DiscoverView } from './components/DiscoverView';
 import { ActivateView } from './components/ActivateView';
 import { InventoryView } from './components/InventoryView';
+import { ToolsView } from './components/ToolsView';
 // v0.3: CreateCollectionView, GatedMintView, TransferView removed
 // from the build because the live HoodStreet MCP (verified 2026-10-11)
 // does not expose an arbitrary-contract-call action. The gated-mint
@@ -34,7 +35,7 @@ import { InventoryView } from './components/InventoryView';
 // source tree as v0.2.x historical code; see CHANGELOG.md.
 import { BridgeMissingBanner } from './components/BridgeMissingBanner';
 
-type Tab = 'passport' | 'discover' | 'activate' | 'create' | 'mint' | 'inventory' | 'transfer';
+type Tab = 'passport' | 'discover' | 'inventory' | 'activate' | 'tools';
 
 interface Props {
   api: AddonAPI | undefined;
@@ -45,6 +46,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'passport', label: 'Passport' },
   { key: 'discover', label: 'Discover' },
   { key: 'inventory', label: 'Inventory' },
+  { key: 'tools', label: 'Tools' },
   { key: 'activate', label: 'Activate' },
 ];
 
@@ -113,6 +115,7 @@ export function App({ api, initialTokenId }: Props) {
           {tab === 'passport' && <PassportView api={api} initialTokenId={initialTokenId} bridgeReady={bridgeReady} />}
           {tab === 'discover' && <DiscoverView api={api} bridgeReady={bridgeReady} />}
           {tab === 'inventory' && <InventoryView api={api} bridgeReady={bridgeReady} />}
+          {tab === 'tools' && <ToolsView api={api} bridgeReady={bridgeReady} />}
           {tab === 'activate' && <ActivateView />}
         </main>
 

@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "id": "hoodstreet-passport",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "name": "HoodStreet Passport",
   "description": "Read-only HoodStreet / CCFF00 member passport: TBA, balances, activity, mint lock, curated-mint discovery. Calls the official HoodStreet MCP; never holds keys.",
   "author": "@notsoblack",

@@ -88,12 +88,50 @@ export async function listHoodstreetTools(api: AddonAPI | undefined, resolution:
 }
 
 const KNOWN_HOODSTREET_TOOLS: McpToolInfo[] = [
-  { name: 'get_neon_wallet', description: 'Resolve and independently verify a CCFF00 NFT\'s canonical ERC-6551 wallet.' },
-  { name: 'get_neon_assets', description: 'Read the Neon wallet\'s native and approved ERC-20 assets plus the live CCFF00 trading lock.' },
-  { name: 'get_neon_balances', description: 'Read raw balances for CCFF00 and approved Robinhood stock tokens.' },
-  { name: 'get_neon_activity', description: 'Read recent ERC-20 activity for the canonical Neon wallet through Blockscout.' },
-  { name: 'get_neon_trade_quote', description: 'Request a fully validated exact-input LI.FI/Fly quote. CCFF00 routes fail closed while trading is locked.' },
-  { name: 'list_nft_mint_profiles', description: 'List explicitly reviewed third-party NFT mint profiles registered on this host.' },
+  // ── read-only audit tools (8, fully wired into sub-views) ─────────────────
+  { name: 'get_neon_wallet', description: 'Resolve and independently verify a CCFF00 NFT\'s canonical ERC-6551 wallet.', category: 'read', args: { tokenId: 'CCFF00 tokenId (e.g. 7980)', walletType: "'ccff00-erc6551'" } },
+  { name: 'get_neon_assets', description: 'Read the Neon wallet\'s native and approved ERC-20 assets plus the live CCFF00 trading lock.', category: 'read', args: { tokenId: 'CCFF00 tokenId', walletType: "'ccff00-erc6551'" } },
+  { name: 'get_neon_balances', description: 'Read raw balances for CCFF00 and approved Robinhood stock tokens.', category: 'read', args: { tokenId: 'CCFF00 tokenId', walletType: "'ccff00-erc6551'" } },
+  { name: 'get_neon_activity', description: 'Read recent ERC-20 activity for the canonical Neon wallet through Blockscout.', category: 'read', args: { tokenId: 'CCFF00 tokenId', walletType: "'ccff00-erc6551'" } },
+  { name: 'discover_wallet_nfts', description: 'Discover all ERC-721 and ERC-1155 NFTs held by a TBA (Blockscout-backed, returns 403 if the indexer is down).', category: 'read', args: { tokenId: 'CCFF00 tokenId', walletType: "'ccff00-erc6551'" } },
+  { name: 'list_nft_mint_profiles', description: 'List explicitly reviewed third-party NFT mint profiles registered on this host.', category: 'read', args: {} },
+  // ── additional read-only tools (not yet wired into a sub-view, callable via Tools view) ──
+  { name: 'get_wallet_token', description: 'Read a single ERC-20 token balance for the canonical Neon wallet (raw units).', category: 'read', args: { tokenId: 'CCFF00 tokenId', tokenAddress: "'0x...'" } },
+  { name: 'get_wallet_nft', description: 'Read a single ERC-721/ERC-1155 holding for the canonical Neon wallet.', category: 'read', args: { tokenId: 'CCFF00 tokenId', contractAddress: "'0x...'", assetTokenId: 'optional tokenId in the collection' } },
+  { name: 'discover_wallet_tokens', description: 'Discover all ERC-20 tokens held by the canonical Neon wallet via Blockscout (indexer-backed, may return 503).', category: 'read', args: { tokenId: 'CCFF00 tokenId' } },
+  // ── read-only trade helpers (referenced; the canonical "should I trade" preflight) ──
+  { name: 'get_neon_trade_quote', description: 'Request a fully validated exact-input LI.FI/Fly quote. CCFF00 routes fail closed while trading is locked.', category: 'read', args: { tokenId: 'CCFF00 tokenId', fromToken: "'0x...'", toToken: "'0x...'", amount: 'base-units string' } },
+  // ── status readbacks (no signing, callable via Tools view) ────────────────
+  { name: 'get_wallet_action_status', description: 'Look up the status of a previously-prepared wallet action by its action id.', category: 'read', args: { actionId: "'0x...'" } },
+  { name: 'get_neon_trade_status', description: 'Look up the status of a previously-prepared Neon trade by its trade id.', category: 'read', args: { tradeId: "'0x...'" } },
+  { name: 'get_nft_mint_status', description: 'Look up the status of a previously-prepared NFT mint by its mint id.', category: 'read', args: { mintId: "'0x...'" } },
+  { name: 'get_marketplace_action_status', description: 'Look up the status of a previously-prepared Seaport marketplace action by its id.', category: 'read', args: { actionId: "'0x...'" } },
+  { name: 'get_ccff00_mint_status', description: 'Look up the status of a previously-prepared CCFF00 mint by its mint id.', category: 'read', args: { mintId: "'0x...'" } },
+  // ── prepare_* (non-custodial, user signs in their own wallet) ─────────────
+  { name: 'prepare_wallet_action', description: 'Prepare an unsigned wallet action (transfer, wrap, unwrap). User signs in their own wallet.', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', walletType: "'ccff00-erc6551'", action: "'transfer' | 'wrap' | 'unwrap'", recipient: "'0x...'", amount: 'base-units string' } },
+  { name: 'prepare_neon_trade', description: 'Prepare an unsigned Neon trade (CCFF00 ↔ ERC-20 via LI.FI/Fly). User signs.', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', fromToken: "'0x...'", toToken: "'0x...'", amount: 'base-units string' } },
+  { name: 'simulate_neon_trade', description: 'Simulate a Neon trade without producing a signature (dry run).', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', fromToken: "'0x...'", toToken: "'0x...'", amount: 'base-units string' } },
+  { name: 'execute_neon_trade', description: 'Execute a Neon trade using the server\'s signer (NOT non-custodial — operator-only).', category: 'execute', args: { tradeId: "'0x...'" } },
+  { name: 'prepare_nft_mint', description: 'Prepare an unsigned NFT mint against a registered third-party mint profile. User signs.', category: 'prepare', args: { profileId: "'0x...'", quantity: 'integer ≥ 1' } },
+  { name: 'simulate_nft_mint', description: 'Simulate an NFT mint without producing a signature (dry run).', category: 'prepare', args: { profileId: "'0x...'", quantity: 'integer ≥ 1' } },
+  { name: 'confirm_nft_mint', description: 'Confirm a prepared NFT mint by submitting the user\'s signed payload.', category: 'prepare', args: { mintId: "'0x...'", signature: "'0x...'" } },
+  // ── marketplace (Seaport) prepare/confirm ─────────────────────────────────
+  { name: 'prepare_marketplace_approval', description: 'Prepare an unsigned Seaport ERC-721/ERC-1155 approval. User signs.', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', contractAddress: "'0x...'", operator: "'0x...'", approved: 'boolean' } },
+  { name: 'prepare_marketplace_cancellation', description: 'Prepare an unsigned Seaport order cancellation. User signs.', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', orderHash: "'0x...'" } },
+  { name: 'prepare_marketplace_order_signature', description: 'Prepare a Seaport order signature payload for the user to sign (EIP-712).', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', maker: "'0x...'", side: "'list' | 'offer'", parameters: 'order parameters object' } },
+  { name: 'prepare_marketplace_fulfillment', description: 'Prepare an unsigned Seaport order fulfillment. User signs.', category: 'prepare', args: { tokenId: 'CCFF00 tokenId', orderHash: "'0x...'" } },
+  { name: 'confirm_marketplace_action', description: 'Confirm a prepared Seaport action by submitting the user\'s signed payload.', category: 'prepare', args: { actionId: "'0x...'", signature: "'0x...'" } },
+  // ── CCFF00 mainnet mint flow (server-signed; operator-only) ──────────────
+  { name: 'prepare_ccff00_mint', description: 'Prepare a CCFF00 mainnet mint transaction. Server signs (NOT non-custodial).', category: 'execute', args: { recipient: "'0x...'", quantity: 'integer ≥ 1' } },
+  { name: 'simulate_ccff00_mint', description: 'Simulate a CCFF00 mainnet mint without producing a transaction.', category: 'execute', args: { recipient: "'0x...'", quantity: 'integer ≥ 1' } },
+  { name: 'execute_ccff00_mint', description: 'Execute a CCFF00 mainnet mint using the server\'s signer (operator-only).', category: 'execute', args: { mintId: "'0x...'" } },
+  { name: 'recover_ccff00_mint', description: 'Recover a stuck or partial CCFF00 mint (operator-only).', category: 'execute', args: { mintId: "'0x...'" } },
+  // ── wallet-action confirm path (pairs with prepare_wallet_action) ──────────
+  { name: 'confirm_wallet_action', description: 'Confirm a prepared wallet action by submitting the user\'s signed payload.', category: 'prepare', args: { actionId: "'0x...'", signature: "'0x...'" } },
+  // ── confirm the unsigned Neon trade produced by prepare_neon_trade ────────
+  { name: 'confirm_neon_trade', description: 'Confirm a prepared Neon trade by submitting the user\'s signed payload.', category: 'prepare', args: { tradeId: "'0x...'", signature: "'0x...'" } },
+  // ── social: post a completed trade to X (Twitter) ─────────────────────────
+  { name: 'post_neon_trade_to_x', description: 'Post a summary of a completed Neon trade to X (Twitter). Requires X OAuth — operator-only.', category: 'execute', args: { tradeId: "'0x...'" } },
 ];
 
 /**
@@ -154,4 +192,4 @@ function demoToolResponse(toolName: string, args: Record<string, unknown>): McpC
   return { content: [{ type: 'text', text: JSON.stringify({ demo: true, tool: toolName }, null, 2) }] };
 }
 
-export { HOODSTREET_MCP_URL, HOODSTREET_MCP_NAME };
+export { HOODSTREET_MCP_URL, HOODSTREET_MCP_NAME, KNOWN_HOODSTREET_TOOLS };
