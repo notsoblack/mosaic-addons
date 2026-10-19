@@ -87,9 +87,6 @@ const DEMO_EDGES: EdgeData[] = [
   { from: 'skill-1', to: 'agent-byron', strength: 0.4, color: '#f59e0b22' },
 ];
 
-const RING_COLORS = ['#1e293b', '#334155', '#475569', '#64748b'];
-const RING_LABELS = ['Portal', 'Vault', 'MCPs', 'Agents', 'ANFEs'];
-
 // ── Component ──────────────────────────────────────────────────────────────
 
 const GraphPanel: React.FC = () => {
@@ -412,38 +409,56 @@ const GraphPanel: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* Background grid */}
+          {/* Background grid — slate-700 stroke + 0.75px, visible without overpowering nodes */}
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" strokeWidth="0.5"/>
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#334155" strokeWidth="0.75"/>
           </pattern>
           <rect width="1000" height="700" fill="url(#grid)" />
 
-          {/* Ring labels */}
-          {[120, 200, 280, 360].map((r, i) => (
+          {/* Ring lines + labels — semantic ring color, strong stroke, dark pill behind label */}
+          {[
+            { r: 120, color: '#06b6d4', label: 'Vault' },
+            { r: 200, color: '#10b981', label: 'MCPs' },
+            { r: 280, color: '#8b5cf6', label: 'Agents' },
+            { r: 360, color: '#ec4899', label: 'ANFEs' },
+          ].map((ring, i) => (
             <g key={`ring-${i}`}>
               <circle
                 cx={centerX + pan.x}
                 cy={centerY + pan.y}
-                r={r * zoom}
+                r={ring.r * zoom}
                 fill="none"
-                stroke={RING_COLORS[i]}
-                strokeWidth="0.5"
+                stroke={ring.color}
+                strokeWidth="1.5"
                 strokeDasharray="4 4"
-                opacity="0.3"
+                opacity="0.7"
+              />
+              {/* dark pill behind the label so the text reads against any ring color */}
+              <rect
+                x={centerX + pan.x + ring.r * zoom + 4}
+                y={centerY + pan.y - 14}
+                width={ring.label.length * 6.6 + 10}
+                height="15"
+                rx="3"
+                fill="#0f172a"
+                stroke={ring.color}
+                strokeWidth="0.5"
+                opacity="0.9"
               />
               <text
-                x={centerX + pan.x + r * zoom + 8}
-                y={centerY + pan.y - 4}
-                fill="#475569"
-                fontSize="8"
+                x={centerX + pan.x + ring.r * zoom + 9}
+                y={centerY + pan.y - 3}
+                fill="#cbd5e1"
+                fontSize="11"
+                fontWeight="600"
                 fontFamily="ui-monospace, monospace"
               >
-                {RING_LABELS[i + 1]}
+                {ring.label}
               </text>
             </g>
           ))}
 
-          {/* Edges */}
+          {/* Edges — visible at default zoom: minimum 1.0px stroke at 0.85 opacity */}
           {edges.map((edge, i) => {
             const fromNode = nodes.find(n => n.id === edge.from);
             const toNode = nodes.find(n => n.id === edge.to);
@@ -458,8 +473,8 @@ const GraphPanel: React.FC = () => {
                 x2={t.x}
                 y2={t.y}
                 stroke={edge.color}
-                strokeWidth={edge.strength * 1.5}
-                opacity={0.6}
+                strokeWidth={Math.max(1.0, edge.strength * 2.5)}
+                opacity={0.85}
               />
             );
           })}
@@ -501,27 +516,31 @@ const GraphPanel: React.FC = () => {
                   </>
                 ) : (
                   <>
+                    {/* Outer halo for non-center nodes — gives each one a visible 'aura' */}
                     <circle
                       cx={pos.x}
                       cy={pos.y}
-                      r={(node.size * zoom) / 2}
-                      fill={`${node.color}18`}
+                      r={Math.max(8, node.size * 1.4 * zoom)}
+                      fill={`${node.color}26`}
                       stroke={isSelected ? '#fff' : node.color}
-                      strokeWidth={isSelected ? 2 : 1}
+                      strokeWidth={isSelected ? 2.5 : 1.5}
                       opacity={0.9}
                     />
-                    {showLabels && zoom > 0.6 && (
+                    {/* <title> exposes the FULL label to native browser hover tooltip + screen readers */}
+                    <title>{node.label}{node.meta?.provider ? ` · ${node.meta.provider}` : ''}</title>
+                    {showLabels && zoom > 0.5 && (
                       <g>
                         <text
                           x={pos.x}
-                          y={pos.y + (node.size * zoom) / 2 + 11}
+                          y={pos.y + Math.max(8, node.size * 1.4 * zoom) + 12}
                           textAnchor="middle"
-                          fill="#94a3b8"
-                          fontSize={Math.max(7, 8 * zoom)}
+                          fill="#e2e8f0"
+                          fontSize={Math.max(10, 11 * zoom)}
+                          fontWeight="500"
                           fontFamily="ui-sans-serif, system-ui"
                           className="pointer-events-none"
                         >
-                          {node.label.length > 12 ? node.label.slice(0, 11) + '…' : node.label}
+                          {node.label.length > 24 ? node.label.slice(0, 23) + '…' : node.label}
                         </text>
                       </g>
                     )}
